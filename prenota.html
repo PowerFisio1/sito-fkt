@@ -40,7 +40,6 @@
     <div class="wrap">
       <span class="kicker">Prenota una visita</span>
       <h1>Scegli l'orario, ricevi la conferma</h1>
-      <p class="lead">Scegli lo slot che preferisci: la richiesta arriva direttamente a me, e appena la confermo ricevi una email con l'appuntamento definitivo.</p>
     </div>
   </section>
 
@@ -48,8 +47,8 @@
     <div class="wrap">
       <div class="grid grid-2" style="align-items:start;">
         <div class="card">
-          <h3 style="margin-top:0;" id="bookingCardTitle">Scegli un giorno e un orario</h3>
-          <p style="margin-bottom:20px;" id="bookingCardIntro">Ti mostro solo gli orari davvero liberi. Scegline uno, poi lasciami i tuoi dati: controllo la mia disponibilità reale e ti confermo (o ti propongo un'alternativa vicina) via email o WhatsApp.</p>
+          <h3 style="margin-top:0;" id="bookingCardTitle">Scegli giorno e orario</h3>
+          <p style="margin-bottom:20px;" id="bookingCardIntro">Seleziona uno slot tra quelli proposti e inoltra la richiesta. Attendi la conferma da parte mia dell'appuntamento prenotato via WhatsApp o via mail.</p>
 
           <div id="slotPickerStep">
             <div class="slotPickerLoading" id="slotPickerLoading">Carico gli orari disponibili…</div>
@@ -93,10 +92,10 @@
         </div>
         <div class="card">
           <h3 style="margin-top:0;">Preferisci contattarmi direttamente?</h3>
-          <p style="margin-bottom:20px;">Va benissimo anche chiamare, scrivere un'email o un messaggio WhatsApp — utile anche se ti serve un appuntamento a breve (gli orari online richiedono almeno 24h di anticipo).</p>
+          <p style="margin-bottom:20px;">Puoi chiamarmi o scrivermi su WhatsApp o tramite mail (soprattutto se hai bisogno di un appuntamento urgente).</p>
           <div class="heroActions" style="flex-direction:column; align-items:stretch;">
             <a class="btn btn-light" href="tel:+393891545023">Chiama 389 154 5023</a>
-            <a class="btn btn-outline" href="mailto:gonta.kam@gmail.com?subject=Richiesta%20prima%20visita">Scrivi una email</a>
+            <a class="btn btn-outline" href="https://wa.me/393891545023?text=Ciao%20Kamil%2C%20vorrei%20prenotare%20una%20visita." target="_blank" rel="noopener">Scrivi su WhatsApp</a>
           </div>
         </div>
       </div>
@@ -241,7 +240,7 @@ function selectSlot(iso, btn, listEl){
 
 function backToPicker(){
   selectedPreferredAt = null;
-  document.getElementById('bookingCardTitle').textContent = 'Scegli un giorno e un orario';
+  document.getElementById('bookingCardTitle').textContent = 'Scegli giorno e orario';
   document.getElementById('bookingCardIntro').style.display = '';
   document.getElementById('slotPickerStep').style.display = '';
   document.getElementById('slotChosenBar').style.display = 'none';
