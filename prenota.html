@@ -67,13 +67,55 @@
   </section>
 
   <section class="alt">
-    <div class="wrap" style="text-align:center; padding:20px 0;">
-      <span class="badge">In costruzione</span>
-      <h2 style="margin:16px 0 10px;">Il calendario online arriva a breve</h2>
-      <p style="color:var(--sub); max-width:520px; margin:0 auto 26px;">Sto completando il sistema di prenotazione automatica. Nel frattempo puoi fissare la tua prima visita scrivendomi o chiamandomi direttamente — ti risponderò il prima possibile.</p>
-      <div class="heroActions" style="justify-content:center;">
-        <a class="btn btn-light" href="tel:+393891545023">Chiama 389 154 5023</a>
-        <a class="btn btn-outline" href="mailto:gonta.kam@gmail.com?subject=Richiesta%20prima%20visita">Scrivi una email</a>
+    <div class="wrap">
+      <div class="grid grid-2" style="align-items:start;">
+        <div class="card">
+          <h3 style="margin-top:0;">Richiedi un orario</h3>
+          <p style="margin-bottom:20px;">Compila i tuoi dati e l'orario che preferisci: controllo la mia disponibilità reale e ti confermo (o ti propongo un'alternativa vicina) via email o WhatsApp.</p>
+          <form id="bookingForm" novalidate>
+            <div class="formGrid">
+              <label class="formField">
+                <span class="formLabel">Nome e cognome</span>
+                <input type="text" id="bkName" required autocomplete="name">
+              </label>
+              <label class="formField">
+                <span class="formLabel">Telefono</span>
+                <input type="tel" id="bkPhone" required autocomplete="tel" placeholder="333 1234567">
+              </label>
+              <label class="formField">
+                <span class="formLabel">Email (facoltativa)</span>
+                <input type="email" id="bkEmail" autocomplete="email">
+              </label>
+              <div class="formRow2">
+                <label class="formField">
+                  <span class="formLabel">Data preferita</span>
+                  <input type="date" id="bkDate" required>
+                </label>
+                <label class="formField">
+                  <span class="formLabel">Ora preferita</span>
+                  <input type="time" id="bkTime" required>
+                </label>
+              </div>
+              <label class="formField">
+                <span class="formLabel">Note (facoltative)</span>
+                <textarea id="bkNotes" placeholder="Motivo della visita, eventuale disponibilità alternativa…"></textarea>
+              </label>
+            </div>
+            <p class="formMsg" id="bkMsg"></p>
+            <button type="submit" class="btn btn-primary" id="bkSubmitBtn">Invia richiesta</button>
+          </form>
+          <div id="bkSuccess" style="display:none;">
+            <p style="color:var(--sub);">Richiesta inviata! Ti contatterò a breve per confermare l'orario o proporti un'alternativa.</p>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">Preferisci contattarmi direttamente?</h3>
+          <p style="margin-bottom:20px;">Va benissimo anche chiamare, scrivere un'email o un messaggio WhatsApp.</p>
+          <div class="heroActions" style="flex-direction:column; align-items:stretch;">
+            <a class="btn btn-light" href="tel:+393891545023">Chiama 389 154 5023</a>
+            <a class="btn btn-outline" href="mailto:gonta.kam@gmail.com?subject=Richiesta%20prima%20visita">Scrivi una email</a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -115,6 +157,76 @@
 
 <script src="nav.js"></script>
 <script src="reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+<script>
+/* ---- invio richiesta di prenotazione: stessa istanza Supabase già usata
+   dall'app di gestione (tabella-esercizi-pwa), solo insert pubblico consentito
+   dalle policy RLS sulla tabella booking_requests. ---- */
+const SUPABASE_URL = 'https://tnzsyeqyghknjnbwknry.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_ci7BzjLo_d2M8KijY6V5Wg_nQ6IFctR';
+const supabaseClient = (typeof window.supabase !== 'undefined' && window.supabase.createClient)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+/* ---- EmailJS: notifica a Kamil di una nuova richiesta, nessun backend ---- */
+const EMAILJS_PUBLIC_KEY = 'z11e1Mg5WJMMDhM1K';
+const EMAILJS_SERVICE_ID = 'service_awatkon';
+const EMAILJS_TEMPLATE_NEW_REQUEST = 'template_f91whio';
+function isEmailJsConfigured(){
+  return typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY && !EMAILJS_PUBLIC_KEY.startsWith('INSERISCI');
+}
+if(isEmailJsConfigured()) emailjs.init({publicKey: EMAILJS_PUBLIC_KEY});
+
+const bkDateInput = document.getElementById('bkDate');
+if(bkDateInput){
+  const today = new Date();
+  bkDateInput.min = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+}
+
+const bookingForm = document.getElementById('bookingForm');
+if(bookingForm){
+  bookingForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const msg = document.getElementById('bkMsg');
+    const submitBtn = document.getElementById('bkSubmitBtn');
+    const fullName = document.getElementById('bkName').value.trim();
+    const phone = document.getElementById('bkPhone').value.trim();
+    const email = document.getElementById('bkEmail').value.trim();
+    const date = document.getElementById('bkDate').value;
+    const time = document.getElementById('bkTime').value;
+    const notes = document.getElementById('bkNotes').value.trim();
+    msg.textContent = '';
+    if(!fullName || !phone || !date || !time){ msg.textContent = 'Compila nome, telefono, data e ora.'; return; }
+    if(!supabaseClient){ msg.textContent = 'Servizio non disponibile al momento: chiamami o scrivimi direttamente.'; return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Invio in corso…';
+
+    const preferredAt = new Date(date+'T'+time+':00').toISOString();
+    const {error} = await supabaseClient.from('booking_requests').insert({
+      full_name: fullName, phone, email: email || null, preferred_at: preferredAt, reason: notes || null
+    });
+
+    if(error){
+      msg.textContent = 'Invio non riuscito, riprova oppure contattami direttamente qui sotto.';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Invia richiesta';
+      return;
+    }
+
+    if(isEmailJsConfigured()){
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_NEW_REQUEST, {
+        patient_name: fullName, patient_phone: phone, patient_email: email || '-',
+        preferred_date: date, preferred_time: time, notes: notes || '-'
+      }).catch(()=>{});
+    }
+
+    bookingForm.style.display = 'none';
+    document.getElementById('bkSuccess').style.display = '';
+  });
+}
+</script>
 </body>
 </html>
