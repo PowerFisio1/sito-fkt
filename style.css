@@ -126,11 +126,15 @@ nav.mainNav a.active{background:rgba(255,255,255,.08); opacity:1; color:var(--ac
 @media (max-width:960px){.heroRight{min-height:320px;}}
 
 .imgPlaceholder{
-  aspect-ratio:4/5; border-radius:var(--radius); background:linear-gradient(160deg, var(--card-2), var(--bg-soft));
+  position:relative; aspect-ratio:4/5; border-radius:var(--radius); background:linear-gradient(160deg, var(--card-2), var(--bg-soft));
   display:flex; align-items:center; justify-content:center; color:var(--sub); font-size:.85rem;
-  text-align:center; padding:24px; border:1px dashed var(--line);
+  text-align:center; padding:24px; border:1px dashed var(--line); overflow:hidden;
 }
 .imgPlaceholder.wide{aspect-ratio:16/9;}
+.imgPlaceholder::after{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:1;
+  background:linear-gradient(180deg, transparent 55%, var(--bg) 100%);
+}
 
 /* ---------- sections ---------- */
 section{padding:64px 0;}
@@ -300,8 +304,7 @@ footer.site{border-top:1px solid var(--line); padding:48px 0 28px; margin-top:40
   .heroSplit{display:block; position:relative; min-height:600px; overflow:hidden;}
   .heroRight{position:absolute; inset:0; z-index:0; min-height:0; height:100%;}
   .heroRight::before{display:none;}
-  .heroRight::after{
-    content:""; position:absolute; inset:0; z-index:2;
+  .heroRight .imgPlaceholder::after{
     background:linear-gradient(180deg, rgba(15,21,28,.3) 0%, rgba(15,21,28,.6) 45%, var(--bg) 94%);
   }
   .heroLeft{
