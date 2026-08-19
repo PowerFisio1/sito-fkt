@@ -72,7 +72,11 @@ nav.mainNav a.active{background:rgba(255,255,255,.08); opacity:1; color:var(--ac
 .menuToggle{display:none; background:none; border:1px solid var(--line); border-radius:10px; width:42px; height:42px; align-items:center; justify-content:center; cursor:pointer; color:var(--ink);}
 
 @media (max-width: 1120px){
-   header.site{backdrop-filter:none; -webkit-backdrop-filter:none;}
+  /* backdrop-filter sull'header crea un "containing block" per gli elementi
+     position:fixed al suo interno: senza toglierlo qui, il menu a tendina
+     (anch'esso fixed) si calcola relativo alla striscia header invece che
+     al viewport, e resta schiacciato a pochi px di altezza invece di aprirsi. */
+  header.site{backdrop-filter:none; -webkit-backdrop-filter:none;}
   nav.mainNav{
     position:fixed; inset:64px 0 0 0; background:var(--bg); flex-direction:column;
     align-items:stretch; padding:12px 24px; gap:4px; transform:translateY(-110%);
@@ -198,11 +202,6 @@ footer.site{border-top:1px solid var(--line); padding:48px 0 28px; margin-top:40
 .statsBand .stat:last-child{border-right:none;}
 .statsBand .num{font-family:var(--font-display); font-weight:500; font-size:2.6rem; color:var(--accent2); line-height:1; font-variant-numeric:tabular-nums;}
 .statsBand .lbl{color:var(--sub); font-size:.85rem; margin-top:8px;}
-@media (max-width:700px){
-  .statsBand{grid-template-columns:1fr;}
-  .statsBand .stat{border-right:none; border-bottom:1px solid var(--line);}
-  .statsBand .stat:last-child{border-bottom:none;}
-}
 
 /* ---------- layout asimmetrico servizi ---------- */
 .asymGrid{display:grid; grid-template-columns:1.3fr 1fr; gap:22px;}
@@ -296,11 +295,23 @@ footer.site{border-top:1px solid var(--line); padding:48px 0 28px; margin-top:40
   .sectionHead{margin-bottom:24px;}
   .card{padding:20px;}
 
-  .heroLeft{padding:44px 24px 36px;}
-  .heroRight{min-height:240px;}
+  /* hero: la foto diventa sfondo a piena pagina dietro a titolo e pulsanti,
+     invece di stare impilata sotto come blocco separato */
+  .heroSplit{display:block; position:relative; min-height:600px; overflow:hidden;}
+  .heroRight{position:absolute; inset:0; z-index:0; min-height:0; height:100%;}
+  .heroRight::before{display:none;}
+  .heroRight::after{
+    content:""; position:absolute; inset:0; z-index:2;
+    background:linear-gradient(180deg, rgba(15,21,28,.3) 0%, rgba(15,21,28,.6) 45%, var(--bg) 94%);
+  }
+  .heroLeft{
+    position:relative; z-index:3; justify-content:flex-end;
+    min-height:600px; padding:24px 24px 40px;
+  }
 
-  .statsBand .stat{padding:24px 18px;}
-  .statsBand .num{font-size:2.1rem;}
+  .statsBand .stat{padding:18px 8px;}
+  .statsBand .num{font-size:1.5rem;}
+  .statsBand .lbl{font-size:.68rem; margin-top:4px; line-height:1.25;}
 
   .asymGrid{gap:14px;}
   .asymGrid .col{gap:14px;}
@@ -316,10 +327,11 @@ footer.site{border-top:1px solid var(--line); padding:48px 0 28px; margin-top:40
 
 @media (max-width: 640px){
   .reviewsGrid{
-    display:flex; grid-template-columns:none; overflow-x:auto; scroll-snap-type:x mandatory;
+    display:flex; grid-template-columns:none; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory;
     scroll-padding-left:24px; gap:14px; margin:0 -24px; padding:4px 24px 10px;
-    -webkit-overflow-scrolling:touch;
+    -webkit-overflow-scrolling:touch; align-items:stretch;
   }
+  .reviewsGrid .reviewCard{height:auto;}
   .reviewsGrid .reviewCard{flex:0 0 82%; scroll-snap-align:start;}
   .reviewsGrid .reviewCard .quote{font-size:.94rem;}
   .reviewCard::before{font-size:4.2rem; top:-4px; right:10px;}
