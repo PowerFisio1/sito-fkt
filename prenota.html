@@ -70,9 +70,24 @@
     <div class="wrap">
       <div class="grid grid-2" style="align-items:start;">
         <div class="card">
-          <h3 style="margin-top:0;">Richiedi un orario</h3>
-          <p style="margin-bottom:20px;">Compila i tuoi dati e l'orario che preferisci: controllo la mia disponibilità reale e ti confermo (o ti propongo un'alternativa vicina) via email o WhatsApp.</p>
-          <form id="bookingForm" novalidate>
+          <h3 style="margin-top:0;" id="bookingCardTitle">Scegli un giorno e un orario</h3>
+          <p style="margin-bottom:20px;" id="bookingCardIntro">Ti mostro solo gli orari davvero liberi. Scegline uno, poi lasciami i tuoi dati: controllo la mia disponibilità reale e ti confermo (o ti propongo un'alternativa vicina) via email o WhatsApp.</p>
+
+          <div id="slotPickerStep">
+            <div class="slotPickerLoading" id="slotPickerLoading">Carico gli orari disponibili…</div>
+            <div class="slotDayList" id="slotDayList" style="display:none;"></div>
+            <button type="button" class="btn btn-outline" id="showMoreDaysBtn" style="display:none; margin-top:16px;">Mostra altre disponibilità</button>
+          </div>
+
+          <div class="slotChosenBar" id="slotChosenBar" style="display:none;">
+            <div>
+              <span class="slotChosenTag">Hai scelto</span>
+              <div class="slotChosenValue" id="slotChosenValue"></div>
+            </div>
+            <button type="button" class="linkBtn" id="changeSlotBtn">Cambia</button>
+          </div>
+
+          <form id="bookingForm" novalidate style="display:none;">
             <div class="formGrid">
               <label class="formField">
                 <span class="formLabel">Nome e cognome</span>
@@ -86,14 +101,6 @@
                 <span class="formLabel">Email (facoltativa)</span>
                 <input type="email" id="bkEmail" autocomplete="email">
               </label>
-              <div class="formField">
-                <span class="formLabel">Giorno e orario</span>
-                <div class="slotPicker">
-                  <div class="slotPickerLoading" id="slotPickerLoading">Carico gli orari disponibili…</div>
-                  <div class="slotDayList" id="slotDayList" style="display:none;"></div>
-                  <p class="slotChosenLabel" id="slotChosenLabel"></p>
-                </div>
-              </div>
               <label class="formField">
                 <span class="formLabel">Note (facoltative)</span>
                 <textarea id="bkNotes" placeholder="Motivo della visita…"></textarea>
@@ -185,17 +192,24 @@ const BOOKING_HORIZON_DAYS = 21;
 const BOOKING_LEAD_HOURS = 24;
 const BOOKING_DURATION_MIN = 45;
 const BOOKING_STEP_MIN = 30;
+const BOOKING_DAYS_INITIAL = 5;
 const WEEKDAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 
 let selectedPreferredAt = null;
 let bookingWindow = null;
 let busyIntervals = [];
+let availableDays = []; // {date, slots} solo i giorni con almeno uno slot libero
+let daysExpanded = false;
 
 function pad2(n){ return String(n).padStart(2,'0'); }
 function parseHM(s){ const [h,m] = s.split(':').map(Number); return h*60+m; }
 function fmtDayLabel(d){
   const s = d.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'});
   return (s.charAt(0).toUpperCase()+s.slice(1)).replace('.', '');
+}
+function fmtDayLabelFull(d){
+  const s = d.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
 }
 function fmtSlotTime(d){ return pad2(d.getHours())+':'+pad2(d.getMinutes()); }
 
@@ -222,26 +236,56 @@ function computeDaySlots(day){
   return slots;
 }
 
-function renderDayList(){
-  const listEl = document.getElementById('slotDayList');
+function computeAvailableDays(){
   const today = new Date(); today.setHours(0,0,0,0);
-  let html = '';
-  let dayCount = 0;
+  const days = [];
   for(let i=0; i<BOOKING_HORIZON_DAYS; i++){
     const day = new Date(today); day.setDate(day.getDate()+i);
     const slots = computeDaySlots(day);
-    if(!slots.length) continue;
-    dayCount++;
-    html += '<div class="slotDay">'+
-      '<button type="button" class="slotDayHead">'+fmtDayLabel(day)+'</button>'+
-      '<div class="slotTimes">'+ slots.map(s=>'<button type="button" class="slotTime" data-iso="'+s.toISOString()+'">'+fmtSlotTime(s)+'</button>').join('') +'</div>'+
-    '</div>';
+    if(slots.length) days.push({date: day, slots});
   }
-  if(!dayCount){
+  return days;
+}
+
+function selectSlot(iso, btn, listEl){
+  listEl.querySelectorAll('.slotTime.selected').forEach(b=>b.classList.remove('selected'));
+  if(btn) btn.classList.add('selected');
+  selectedPreferredAt = iso;
+  const d = new Date(iso);
+  document.getElementById('slotChosenValue').textContent = fmtDayLabelFull(d)+', ore '+fmtSlotTime(d);
+  document.getElementById('bookingCardTitle').textContent = 'I tuoi dati';
+  document.getElementById('bookingCardIntro').style.display = 'none';
+  document.getElementById('slotPickerStep').style.display = 'none';
+  document.getElementById('slotChosenBar').style.display = '';
+  document.getElementById('bookingForm').style.display = '';
+  document.getElementById('bkName').focus();
+}
+
+function backToPicker(){
+  selectedPreferredAt = null;
+  document.getElementById('bookingCardTitle').textContent = 'Scegli un giorno e un orario';
+  document.getElementById('bookingCardIntro').style.display = '';
+  document.getElementById('slotPickerStep').style.display = '';
+  document.getElementById('slotChosenBar').style.display = 'none';
+  document.getElementById('bookingForm').style.display = 'none';
+}
+document.getElementById('changeSlotBtn').addEventListener('click', backToPicker);
+
+function renderDayList(){
+  const listEl = document.getElementById('slotDayList');
+  const moreBtn = document.getElementById('showMoreDaysBtn');
+  if(!availableDays.length){
     listEl.innerHTML = '<div class="slotEmpty">Nessun orario disponibile nelle prossime settimane: scrivimi direttamente qui sotto.</div>';
+    moreBtn.style.display = 'none';
     return;
   }
-  listEl.innerHTML = html;
+  const visible = daysExpanded ? availableDays : availableDays.slice(0, BOOKING_DAYS_INITIAL);
+  listEl.innerHTML = visible.map(({date, slots})=>
+    '<div class="slotDay">'+
+      '<button type="button" class="slotDayHead">'+fmtDayLabel(date)+'</button>'+
+      '<div class="slotTimes">'+ slots.map(s=>'<button type="button" class="slotTime" data-iso="'+s.toISOString()+'">'+fmtSlotTime(s)+'</button>').join('') +'</div>'+
+    '</div>'
+  ).join('');
   listEl.querySelectorAll('.slotDayHead').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const dayEl = btn.closest('.slotDay');
@@ -251,15 +295,14 @@ function renderDayList(){
     });
   });
   listEl.querySelectorAll('.slotTime').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      listEl.querySelectorAll('.slotTime.selected').forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedPreferredAt = btn.dataset.iso;
-      const d = new Date(selectedPreferredAt);
-      document.getElementById('slotChosenLabel').textContent = 'Scelto: '+fmtDayLabel(d)+' alle '+fmtSlotTime(d);
-    });
+    btn.addEventListener('click', ()=> selectSlot(btn.dataset.iso, btn, listEl));
   });
+  moreBtn.style.display = (!daysExpanded && availableDays.length > BOOKING_DAYS_INITIAL) ? '' : 'none';
 }
+document.getElementById('showMoreDaysBtn').addEventListener('click', ()=>{
+  daysExpanded = true;
+  renderDayList();
+});
 
 async function loadBookingAvailability(){
   const loadingEl = document.getElementById('slotPickerLoading');
@@ -276,6 +319,7 @@ async function loadBookingAvailability(){
     }
     bookingWindow = winData.booking_window;
     busyIntervals = (busyData||[]).map(b=>({start:new Date(b.start_at), end:new Date(b.end_at)}));
+    availableDays = computeAvailableDays();
     renderDayList();
     loadingEl.style.display = 'none';
     listEl.style.display = '';
