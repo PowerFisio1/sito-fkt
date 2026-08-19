@@ -86,19 +86,17 @@
                 <span class="formLabel">Email (facoltativa)</span>
                 <input type="email" id="bkEmail" autocomplete="email">
               </label>
-              <div class="formRow2">
-                <label class="formField">
-                  <span class="formLabel">Data preferita</span>
-                  <input type="date" id="bkDate" required>
-                </label>
-                <label class="formField">
-                  <span class="formLabel">Ora preferita</span>
-                  <input type="time" id="bkTime" required>
-                </label>
+              <div class="formField">
+                <span class="formLabel">Giorno e orario</span>
+                <div class="slotPicker">
+                  <div class="slotPickerLoading" id="slotPickerLoading">Carico gli orari disponibili…</div>
+                  <div class="slotDayList" id="slotDayList" style="display:none;"></div>
+                  <p class="slotChosenLabel" id="slotChosenLabel"></p>
+                </div>
               </div>
               <label class="formField">
                 <span class="formLabel">Note (facoltative)</span>
-                <textarea id="bkNotes" placeholder="Motivo della visita, eventuale disponibilità alternativa…"></textarea>
+                <textarea id="bkNotes" placeholder="Motivo della visita…"></textarea>
               </label>
             </div>
             <p class="formMsg" id="bkMsg"></p>
@@ -110,7 +108,7 @@
         </div>
         <div class="card">
           <h3 style="margin-top:0;">Preferisci contattarmi direttamente?</h3>
-          <p style="margin-bottom:20px;">Va benissimo anche chiamare, scrivere un'email o un messaggio WhatsApp.</p>
+          <p style="margin-bottom:20px;">Va benissimo anche chiamare, scrivere un'email o un messaggio WhatsApp — utile anche se ti serve un appuntamento a breve (gli orari online richiedono almeno 24h di anticipo).</p>
           <div class="heroActions" style="flex-direction:column; align-items:stretch;">
             <a class="btn btn-light" href="tel:+393891545023">Chiama 389 154 5023</a>
             <a class="btn btn-outline" href="mailto:gonta.kam@gmail.com?subject=Richiesta%20prima%20visita">Scrivi una email</a>
@@ -179,11 +177,113 @@ function isEmailJsConfigured(){
 }
 if(isEmailJsConfigured()) emailjs.init({publicKey: EMAILJS_PUBLIC_KEY});
 
-const bkDateInput = document.getElementById('bkDate');
-if(bkDateInput){
-  const today = new Date();
-  bkDateInput.min = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+/* ---- picker giorno/orario: legge disponibilità reale (finestra settimanale +
+   quanto già occupato tra appuntamenti, richieste in attesa e Google Calendar
+   sincronizzato) tramite due view pubbliche di sola lettura, nessun dato
+   sensibile esposto (solo orari, mai nomi pazienti). ---- */
+const BOOKING_HORIZON_DAYS = 21;
+const BOOKING_LEAD_HOURS = 24;
+const BOOKING_DURATION_MIN = 45;
+const BOOKING_STEP_MIN = 30;
+const WEEKDAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
+
+let selectedPreferredAt = null;
+let bookingWindow = null;
+let busyIntervals = [];
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function parseHM(s){ const [h,m] = s.split(':').map(Number); return h*60+m; }
+function fmtDayLabel(d){
+  const s = d.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'});
+  return (s.charAt(0).toUpperCase()+s.slice(1)).replace('.', '');
 }
+function fmtSlotTime(d){ return pad2(d.getHours())+':'+pad2(d.getMinutes()); }
+
+function slotOverlapsBusy(start, end){
+  return busyIntervals.some(b => start < b.end && end > b.start);
+}
+
+function computeDaySlots(day){
+  const key = WEEKDAY_KEYS[day.getDay()];
+  const ranges = (bookingWindow && bookingWindow[key]) || [];
+  if(!ranges.length) return [];
+  const minStart = new Date(Date.now() + BOOKING_LEAD_HOURS*3600000);
+  const slots = [];
+  ranges.forEach(r=>{
+    const startMin = parseHM(r.start), endMin = parseHM(r.end);
+    for(let m = startMin; m + BOOKING_DURATION_MIN <= endMin; m += BOOKING_STEP_MIN){
+      const s = new Date(day); s.setHours(0, m, 0, 0);
+      const e = new Date(s.getTime() + BOOKING_DURATION_MIN*60000);
+      if(s < minStart) continue;
+      if(slotOverlapsBusy(s, e)) continue;
+      slots.push(s);
+    }
+  });
+  return slots;
+}
+
+function renderDayList(){
+  const listEl = document.getElementById('slotDayList');
+  const today = new Date(); today.setHours(0,0,0,0);
+  let html = '';
+  let dayCount = 0;
+  for(let i=0; i<BOOKING_HORIZON_DAYS; i++){
+    const day = new Date(today); day.setDate(day.getDate()+i);
+    const slots = computeDaySlots(day);
+    if(!slots.length) continue;
+    dayCount++;
+    html += '<div class="slotDay">'+
+      '<button type="button" class="slotDayHead">'+fmtDayLabel(day)+'</button>'+
+      '<div class="slotTimes">'+ slots.map(s=>'<button type="button" class="slotTime" data-iso="'+s.toISOString()+'">'+fmtSlotTime(s)+'</button>').join('') +'</div>'+
+    '</div>';
+  }
+  if(!dayCount){
+    listEl.innerHTML = '<div class="slotEmpty">Nessun orario disponibile nelle prossime settimane: scrivimi direttamente qui sotto.</div>';
+    return;
+  }
+  listEl.innerHTML = html;
+  listEl.querySelectorAll('.slotDayHead').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const dayEl = btn.closest('.slotDay');
+      const wasOpen = dayEl.classList.contains('open');
+      listEl.querySelectorAll('.slotDay.open').forEach(d=>d.classList.remove('open'));
+      if(!wasOpen) dayEl.classList.add('open');
+    });
+  });
+  listEl.querySelectorAll('.slotTime').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      listEl.querySelectorAll('.slotTime.selected').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedPreferredAt = btn.dataset.iso;
+      const d = new Date(selectedPreferredAt);
+      document.getElementById('slotChosenLabel').textContent = 'Scelto: '+fmtDayLabel(d)+' alle '+fmtSlotTime(d);
+    });
+  });
+}
+
+async function loadBookingAvailability(){
+  const loadingEl = document.getElementById('slotPickerLoading');
+  const listEl = document.getElementById('slotDayList');
+  if(!supabaseClient){ loadingEl.textContent = 'Servizio non disponibile al momento: scrivimi o chiamami qui sotto.'; return; }
+  try{
+    const [{data: winData, error: winErr}, {data: busyData, error: busyErr}] = await Promise.all([
+      supabaseClient.from('booking_window_public').select('booking_window').limit(1).maybeSingle(),
+      supabaseClient.from('busy_slots').select('start_at,end_at')
+    ]);
+    if(winErr || !winData || !winData.booking_window){
+      loadingEl.textContent = 'Orari non disponibili al momento: scrivimi o chiamami qui sotto.';
+      return;
+    }
+    bookingWindow = winData.booking_window;
+    busyIntervals = (busyData||[]).map(b=>({start:new Date(b.start_at), end:new Date(b.end_at)}));
+    renderDayList();
+    loadingEl.style.display = 'none';
+    listEl.style.display = '';
+  }catch(e){
+    loadingEl.textContent = 'Orari non disponibili al momento: scrivimi o chiamami qui sotto.';
+  }
+}
+loadBookingAvailability();
 
 const bookingForm = document.getElementById('bookingForm');
 if(bookingForm){
@@ -194,19 +294,17 @@ if(bookingForm){
     const fullName = document.getElementById('bkName').value.trim();
     const phone = document.getElementById('bkPhone').value.trim();
     const email = document.getElementById('bkEmail').value.trim();
-    const date = document.getElementById('bkDate').value;
-    const time = document.getElementById('bkTime').value;
     const notes = document.getElementById('bkNotes').value.trim();
     msg.textContent = '';
-    if(!fullName || !phone || !date || !time){ msg.textContent = 'Compila nome, telefono, data e ora.'; return; }
+    if(!fullName || !phone){ msg.textContent = 'Compila nome e telefono.'; return; }
+    if(!selectedPreferredAt){ msg.textContent = 'Scegli un giorno e un orario tra quelli disponibili.'; return; }
     if(!supabaseClient){ msg.textContent = 'Servizio non disponibile al momento: chiamami o scrivimi direttamente.'; return; }
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Invio in corso…';
 
-    const preferredAt = new Date(date+'T'+time+':00').toISOString();
     const {error} = await supabaseClient.from('booking_requests').insert({
-      full_name: fullName, phone, email: email || null, preferred_at: preferredAt, reason: notes || null
+      full_name: fullName, phone, email: email || null, preferred_at: selectedPreferredAt, reason: notes || null
     });
 
     if(error){
@@ -217,9 +315,11 @@ if(bookingForm){
     }
 
     if(isEmailJsConfigured()){
+      const chosen = new Date(selectedPreferredAt);
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_NEW_REQUEST, {
         patient_name: fullName, patient_phone: phone, patient_email: email || '-',
-        preferred_date: date, preferred_time: time, notes: notes || '-'
+        preferred_date: chosen.toLocaleDateString('it-IT'), preferred_time: pad2(chosen.getHours())+':'+pad2(chosen.getMinutes()),
+        notes: notes || '-'
       }).catch(()=>{});
     }
 

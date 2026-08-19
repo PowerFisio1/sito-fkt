@@ -355,3 +355,26 @@ footer.site{border-top:1px solid var(--line); padding:48px 0 28px; margin-top:40
 .formRow2 .formField{flex:1;}
 .formMsg{font-size:.88rem; color:var(--accent2); min-height:1.2em; margin:2px 0 14px;}
 @media (max-width:600px){ .formRow2{flex-direction:column; gap:16px;} }
+
+/* ---- picker giorno/orario ---- */
+.slotPickerLoading{font-size:.9rem; color:var(--sub); padding:4px 0;}
+.slotDayList{display:flex; flex-direction:column; gap:8px;}
+.slotDay{border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+.slotDayHead{
+  display:block; width:100%; text-align:left; font-family:var(--font-body); font-size:.85rem; font-weight:600;
+  letter-spacing:.02em; padding:11px 14px; background:var(--bg-soft); color:var(--ink);
+  border:none; cursor:pointer; transition:background-color .15s ease, color .15s ease;
+}
+.slotDayHead:hover{background:var(--card-2, var(--bg-soft));}
+.slotDay.open .slotDayHead{background:var(--accent2); color:#fff;}
+.slotTimes{display:none; flex-wrap:wrap; gap:8px; padding:12px 14px;}
+.slotDay.open .slotTimes{display:flex;}
+.slotTime{
+  font-family:var(--font-body); font-size:.85rem; font-weight:600; padding:8px 14px;
+  border-radius:100px; border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer;
+  transition:border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+.slotTime:hover{border-color:var(--accent2);}
+.slotTime.selected{background:var(--accent2); border-color:var(--accent2); color:#fff;}
+.slotEmpty{font-size:.9rem; color:var(--sub); padding:6px 0;}
+.slotChosenLabel{font-size:.86rem; color:var(--accent2); font-weight:600; margin:12px 0 0; min-height:1.2em;}
