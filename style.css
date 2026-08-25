@@ -313,20 +313,20 @@ footer.site{border-top:1px solid var(--line); padding:48px 0 28px; margin-top:40
   .card{padding:20px;}
 
   /* hero: la foto diventa sfondo a piena pagina dietro a titolo e pulsanti,
-     invece di stare impilata sotto come blocco separato */
-  .heroSplit{display:block; position:relative; min-height:600px; overflow:hidden;}
+     invece di stare impilata sotto come blocco separato. Altezza ridotta
+     (era 600px) perché con una foto vera orizzontale un riquadro troppo alto
+     costringe "cover" a ritagliare via troppa larghezza (rischio perdere
+     paziente/gamba ai lati) — più è bassa, meno serve ritagliare. */
+  .heroSplit{display:block; position:relative; min-height:400px; overflow:hidden;}
   .heroRight{position:absolute; inset:0; z-index:0; min-height:0; height:100%;}
   .heroRight::before{display:none;}
   .heroRight .imgPlaceholder::after{
     background:linear-gradient(180deg, rgba(15,21,28,.3) 0%, rgba(15,21,28,.6) 45%, var(--bg) 94%);
   }
-  /* su schermi stretti "cover" ritagliava troppo la foto orizzontale (si vedeva
-     a malapena metà scena): "contain" la mostra intera, centrata, con lo sfondo
-     scuro del pannello a riempire i lati sopra/sotto */
-  .heroPhoto{object-fit:contain; object-position:center 30%;}
+  .heroPhoto{object-fit:cover; object-position:58% center;}
   .heroLeft{
     position:relative; z-index:3; justify-content:flex-end;
-    min-height:600px; padding:24px 24px 40px;
+    min-height:400px; padding:24px 24px 40px;
   }
 
   .statsBand .stat{padding:18px 8px;}
