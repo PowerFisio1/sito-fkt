@@ -123,7 +123,11 @@ nav.mainNav a.active{background:rgba(255,255,255,.08); opacity:1; color:var(--ac
   position:absolute; inset:0; width:100%; height:100%; border-radius:0; border:none;
   aspect-ratio:auto; z-index:0;
 }
-.heroPhoto{width:100%; height:100%; object-fit:cover; object-position:center 12%; display:block;}
+/* "contain", non "cover": su schermi larghi il riquadro diventa molto più
+   largo che alto (la colonna testo è limitata a 560px, la foto prende tutto
+   lo spazio restante) — con "cover" il ritaglio verticale tagliava via la
+   gamba, mostrando solo il volto. "contain" mostra sempre la foto intera. */
+.heroPhoto{width:100%; height:100%; object-fit:contain; object-position:center; display:block;}
 @media (max-width:960px){.heroRight{min-height:320px;}}
 
 .imgPlaceholder{
