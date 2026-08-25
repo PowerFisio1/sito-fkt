@@ -124,11 +124,11 @@ nav.mainNav a.active{background:rgba(255,255,255,.08); opacity:1; color:var(--ac
   aspect-ratio:auto; z-index:0;
 }
 .imgPlaceholder picture{display:block; width:100%; height:100%;}
-/* "contain", non "cover": su schermi larghi il riquadro diventa molto più
-   largo che alto (la colonna testo è limitata a 560px, la foto prende tutto
-   lo spazio restante) — con "cover" il ritaglio verticale tagliava via la
-   gamba, mostrando solo il volto. "contain" mostra sempre la foto intera. */
-.heroPhoto{width:100%; height:100%; object-fit:contain; object-position:center; display:block;}
+/* "cover": riempie sempre il riquadro senza bordi vuoti, su qualunque
+   larghezza. La foto attuale è già molto larga (rapporto ~2:1) quindi il
+   ritaglio necessario resta minimo — vedi object-position per tenere il
+   volto in alto ben visibile anche quando serve ritagliare l'altezza. */
+.heroPhoto{width:100%; height:100%; object-fit:cover; object-position:center 25%; display:block;}
 @media (max-width:960px){.heroRight{min-height:320px;}}
 
 .imgPlaceholder{
