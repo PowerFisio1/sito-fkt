@@ -235,11 +235,6 @@ footer.site{border-top:1px solid var(--line); padding:48px 0 28px; margin-top:40
 .featCard .icon{margin-bottom:auto;}
 .featCard h3{font-size:1.3rem;}
 .miniCard{flex:1; display:flex; flex-direction:column;}
-.miniCard.photoCard{position:relative; overflow:hidden; justify-content:flex-end; min-height:380px;}
-.miniCard.photoCard .cardPhoto{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;}
-.miniCard.photoCard::before{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,21,28,.1) 0%, rgba(15,21,28,.55) 55%, rgba(15,21,28,.94) 100%); z-index:1;}
-.miniCard.photoCard .icon{position:relative; z-index:2; margin-bottom:auto; background:rgba(255,255,255,.16); color:#fff; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);}
-.miniCard.photoCard h3, .miniCard.photoCard p{position:relative; z-index:2;}
 @media (max-width:860px){.asymGrid{grid-template-columns:1fr;}}
 
 /* ---------- card recensione ---------- */
