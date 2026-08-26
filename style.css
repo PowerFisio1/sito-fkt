@@ -168,7 +168,12 @@ section.alt{background:var(--bg-soft); border-top:1px solid var(--line); border-
 @media (max-width:860px){.grid-3{grid-template-columns:1fr 1fr;} .grid-2{grid-template-columns:1fr;}}
 @media (max-width:600px){.grid-3{grid-template-columns:1fr;}}
 
-.carousel{position:relative; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow-1);}
+.carousel{position:relative; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow-1); border:1px solid var(--line);}
+.carouselLabel{
+  position:absolute; top:14px; left:14px; z-index:3; background:var(--accent2); color:#241505;
+  font-weight:700; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em;
+  padding:6px 13px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
 .carouselTrack{display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
 .carouselTrack::-webkit-scrollbar{display:none;}
 .carouselSlide{flex:0 0 100%; width:100%; aspect-ratio:4/3; object-fit:cover; scroll-snap-align:start; display:block;}
