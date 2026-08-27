@@ -83,6 +83,10 @@
                 <textarea id="bkNotes" placeholder="Motivo della visita…"></textarea>
               </label>
             </div>
+            <label class="formCheck">
+              <input type="checkbox" id="bkConsent">
+              <span>Ho letto l'<a href="privacy.html" target="_blank" rel="noopener">informativa sulla privacy</a> e acconsento al trattamento dei miei dati per gestire la richiesta di appuntamento, comprese eventuali informazioni sulla salute indicate nel campo Note.</span>
+            </label>
             <p class="formMsg" id="bkMsg"></p>
             <button type="submit" class="btn btn-primary" id="bkSubmitBtn">Invia richiesta</button>
           </form>
@@ -318,13 +322,15 @@ if(bookingForm){
     msg.textContent = '';
     if(!fullName || !phone){ msg.textContent = 'Compila nome e telefono.'; return; }
     if(!selectedPreferredAt){ msg.textContent = 'Scegli un giorno e un orario tra quelli disponibili.'; return; }
+    if(!document.getElementById('bkConsent').checked){ msg.textContent = 'Devi accettare l\'informativa privacy per inviare la richiesta.'; return; }
     if(!supabaseClient){ msg.textContent = 'Servizio non disponibile al momento: chiamami o scrivimi direttamente.'; return; }
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Invio in corso…';
 
     const {error} = await supabaseClient.from('booking_requests').insert({
-      full_name: fullName, phone, email: email || null, preferred_at: selectedPreferredAt, reason: notes || null
+      full_name: fullName, phone, email: email || null, preferred_at: selectedPreferredAt, reason: notes || null,
+      privacy_consent: true, privacy_consent_at: new Date().toISOString()
     });
 
     if(error){
