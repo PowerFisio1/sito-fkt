@@ -140,6 +140,17 @@ nav.mainNav a.active{background:rgba(255,255,255,.08); opacity:1; color:var(--ac
 
 .card.mapCard{padding:0; overflow:hidden;}
 .card.mapCard iframe{display:block; width:100%; aspect-ratio:16/9; border:0;}
+.mapCaption{margin:14px 0 0; font-size:.88rem; color:var(--sub); text-align:center;}
+.mapCaption a{color:var(--accent2);}
+
+.contactTop{align-items:stretch;}
+.miniCardStack{display:flex; flex-direction:column; gap:14px; justify-content:center;}
+.card.miniInfoCard{
+  display:flex; align-items:center; gap:16px; padding:14px 20px; text-decoration:none; color:var(--ink);
+}
+.card.miniInfoCard .icon{width:40px; height:40px; border-radius:10px; margin-bottom:0; flex-shrink:0;}
+.card.miniInfoCard .icon svg{width:20px; height:20px;}
+.card.miniInfoCard span{font-weight:600; font-size:.98rem;}
 
 .argoneseLogoWrap{position:relative; display:flex; align-items:center; justify-content:center; padding:20px;}
 .argoneseLogoWrap::before{
