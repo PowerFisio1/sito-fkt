@@ -138,6 +138,9 @@ nav.mainNav a.active{background:rgba(255,255,255,.08); opacity:1; color:var(--ac
 }
 .imgPlaceholder.wide{aspect-ratio:16/9;}
 
+.card.mapCard{padding:0; overflow:hidden;}
+.card.mapCard iframe{display:block; width:100%; aspect-ratio:16/9; border:0;}
+
 .argoneseLogoWrap{position:relative; display:flex; align-items:center; justify-content:center; padding:20px;}
 .argoneseLogoWrap::before{
   content:""; position:absolute; top:50%; left:50%; width:75%; height:75%; border-radius:50%;
