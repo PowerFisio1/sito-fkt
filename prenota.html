@@ -343,6 +343,7 @@ if(bookingForm){
     if(isEmailJsConfigured()){
       const chosen = new Date(selectedPreferredAt);
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_NEW_REQUEST, {
+        to_email: 'info@kamilfkt.it',
         patient_name: fullName, patient_phone: phone, patient_email: email || '-',
         preferred_date: chosen.toLocaleDateString('it-IT'), preferred_time: pad2(chosen.getHours())+':'+pad2(chosen.getMinutes()),
         notes: notes || '-'
